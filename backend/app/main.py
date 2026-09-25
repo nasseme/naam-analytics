@@ -1,16 +1,16 @@
 """
 API V1 — Data Analyst Platform
 Endpoints :
-  POST /analyze          -> upload d'un CSV, retourne soit le rapport complet,
-                             soit une liste de clarifications à demander à l'utilisateur.
-  POST /analyze/confirm   -> reçoit les types confirmés par l'utilisateur, renvoie le rapport final.
-
-NOTE V1 : pas encore de persistance Supabase ni d'export PDF ici — ce module se concentre
-sur le flux upload -> détection -> rapport, à valider avant de brancher le reste.
+  POST /analyze          -> upload d'un CSV/Excel, retourne soit le rapport complet
+                             (sauvegardé dans Supabase), soit une liste de clarifications.
+  POST /analyze/confirm  -> reçoit les types confirmés par l'utilisateur, sauvegarde et
+                             renvoie le rapport final.
+  GET  /reports/{id}     -> récupère un rapport déjà sauvegardé, via son lien unique.
 """
 from __future__ import annotations
 
 import io
+import os
 import uuid
 from typing import Any
 
@@ -18,10 +18,11 @@ import pandas as pd
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from supabase import Client, create_client
 
 from .type_detection import CONFIDENCE_THRESHOLD, analyze_dataframe
 
-app = FastAPI(title="Data Analyst Platform API", version="0.1.0")
+app = FastAPI(title="Data Analyst Platform API", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,9 +33,39 @@ app.add_middleware(
 
 MAX_FILE_SIZE_MB = 10
 
-# Stockage en mémoire temporaire des DataFrames en attente de clarification.
-# À remplacer par Supabase / cache réel dès que la persistance est branchée.
-_pending_uploads: dict[str, pd.DataFrame] = {}
+# --- Supabase ---------------------------------------------------------------
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+supabase: Client | None = None
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+
+def save_report(filename: str, report: dict[str, Any], file_size: int | None) -> str:
+    """Sauvegarde le rapport dans Supabase et retourne son id. Si Supabase n'est
+    pas configuré (variables d'env absentes), fonctionne quand même en mode
+    dégradé : génère un id local, sans persistance réelle (utile en dev)."""
+    report_id = str(uuid.uuid4())
+    if supabase is None:
+        return report_id
+
+    result = (
+        supabase.table("reports")
+        .insert(
+            {
+                "filename": filename,
+                "report_json": report,
+                "file_size": file_size,
+            }
+        )
+        .execute()
+    )
+    return result.data[0]["id"]
+
+
+# --- Uploads en attente de clarification (en mémoire, éphémère) -------------
+_pending_uploads: dict[str, dict[str, Any]] = {}
 
 
 class ClarificationAnswer(BaseModel):
@@ -79,13 +110,15 @@ def _build_report(df: pd.DataFrame, columns_meta: list[dict[str, Any]]) -> dict[
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
     content = await file.read()
-    size_mb = len(content) / (1024 * 1024)
+    size_bytes = len(content)
+    size_mb = size_bytes / (1024 * 1024)
     if size_mb > MAX_FILE_SIZE_MB:
         raise HTTPException(
             status_code=400,
             detail=f"Fichier trop volumineux ({size_mb:.1f} Mo). Limite : {MAX_FILE_SIZE_MB} Mo.",
         )
 
+    filename = file.filename or "fichier"
     df = _read_file(file, content)
     columns = analyze_dataframe(df)
 
@@ -93,7 +126,11 @@ async def analyze(file: UploadFile = File(...)):
 
     if ambiguous:
         upload_id = str(uuid.uuid4())
-        _pending_uploads[upload_id] = df
+        _pending_uploads[upload_id] = {
+            "df": df,
+            "filename": filename,
+            "size_bytes": size_bytes,
+        }
         return {
             "status": "needs_clarification",
             "upload_id": upload_id,
@@ -110,15 +147,18 @@ async def analyze(file: UploadFile = File(...)):
         }
 
     columns_meta = [c.__dict__ for c in columns]
-    return {"status": "complete", "report": _build_report(df, columns_meta)}
+    report = _build_report(df, columns_meta)
+    report_id = save_report(filename, report, size_bytes)
+    return {"status": "complete", "id": report_id, "report": report}
 
 
 @app.post("/analyze/confirm")
 async def confirm(payload: ConfirmRequest):
-    df = _pending_uploads.get(payload.upload_id)
-    if df is None:
+    pending = _pending_uploads.get(payload.upload_id)
+    if pending is None:
         raise HTTPException(status_code=404, detail="Upload introuvable ou expiré.")
 
+    df = pending["df"]
     columns = analyze_dataframe(df)
     answers_by_col = {a.column: a.confirmed_type for a in payload.answers}
 
@@ -132,9 +172,25 @@ async def confirm(payload: ConfirmRequest):
         columns_meta.append(d)
 
     _pending_uploads.pop(payload.upload_id, None)
-    return {"status": "complete", "report": _build_report(df, columns_meta)}
+    report = _build_report(df, columns_meta)
+    report_id = save_report(pending["filename"], report, pending["size_bytes"])
+    return {"status": "complete", "id": report_id, "report": report}
+
+
+@app.get("/reports/{report_id}")
+async def get_report(report_id: str):
+    if supabase is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase n'est pas configuré sur ce serveur (SUPABASE_URL/SUPABASE_KEY manquants).",
+        )
+    result = supabase.table("reports").select("*").eq("id", report_id).execute()
+    if not result.data:
+        raise HTTPException(status_code=404, detail="Rapport introuvable.")
+    row = result.data[0]
+    return {"id": row["id"], "filename": row["filename"], "report": row["report_json"]}
 
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "supabase_connected": supabase is not None}
