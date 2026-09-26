@@ -1,6 +1,7 @@
 "use client";
 import ReportDashboard from "./components/ReportDashboard";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -14,9 +15,10 @@ type Clarification = {
 
 type AnalyzeResponse =
   | { status: "needs_clarification"; upload_id: string; clarifications: Clarification[] }
-  | { status: "complete"; report: any };
+  | { status: "complete"; id: string; report: any };
 
 export default function Home() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
@@ -41,6 +43,9 @@ export default function Home() {
       }
       const data: AnalyzeResponse = await res.json();
       setResult(data);
+      if (data.status === "complete") {
+        router.push(`/dashboard/${data.id}`);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -68,6 +73,9 @@ export default function Home() {
       if (!res.ok) throw new Error("Erreur lors de la confirmation.");
       const data: AnalyzeResponse = await res.json();
       setResult(data);
+      if (data.status === "complete") {
+        router.push(`/dashboard/${data.id}`);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
