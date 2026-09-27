@@ -25,6 +25,8 @@ from .pdf_export import generate_pdf
 
 from .type_detection import CONFIDENCE_THRESHOLD, analyze_dataframe
 
+from .insights import build_insights
+
 app = FastAPI(title="Data Analyst Platform API", version="0.2.0")
 
 app.add_middleware(
@@ -179,6 +181,7 @@ def _build_report(df: pd.DataFrame, columns_meta: list[dict[str, Any]]) -> dict[
         "duplicates": int(df.duplicated().sum()),
         "columns_analysis": columns_meta,
         "descriptive_stats": df.describe(include="all").fillna("").astype(str).to_dict(),
+        "insights": build_insights(df, columns_meta),
     }
 
 
