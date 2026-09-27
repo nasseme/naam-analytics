@@ -126,7 +126,7 @@ def analyze_column(series: pd.Series) -> ColumnAnalysis:
 
     # 6. Faible cardinalité -> catégorielle probable
     ratio_unique = unique_count / len(non_null)
-    if unique_count <= 20 and ratio_unique < 0.5:
+    if unique_count <= 50 and ratio_unique < 0.5:
         col.detected_type = "categorical"
         col.confidence = 0.8
         return col

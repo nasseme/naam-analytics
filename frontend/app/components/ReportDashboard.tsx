@@ -27,6 +27,10 @@ type Report = {
   preview: Record<string, string>[];
   columns_analysis: ColumnAnalysis[];
   descriptive_stats: Record<string, Record<string, string>>;
+  insights?: {
+    key_insights: string[];
+    ml_suggestions: string[];
+  };
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -63,6 +67,39 @@ export default function ReportDashboard({ report }: { report: Report }) {
 
   return (
     <div className="space-y-10">
+        {report.insights && report.insights.key_insights.length > 0 && (
+        <div>
+          <h3 className="font-display font-bold text-lg mb-3">Points clés</h3>
+          <ul className="space-y-2 mb-6">
+            {report.insights.key_insights.map((insight, i) => (
+              <li
+                key={i}
+                className="border border-[#D3D1C7] rounded-lg px-4 py-3 text-sm"
+              >
+                {insight}
+              </li>
+            ))}
+          </ul>
+
+          {report.insights.ml_suggestions.length > 0 && (
+            <>
+              <h3 className="font-display font-bold text-lg mb-3">
+                Pistes Machine Learning (V2)
+              </h3>
+              <ul className="space-y-2">
+                {report.insights.ml_suggestions.map((s, i) => (
+                  <li
+                    key={i}
+                    className="border border-amber/40 bg-amber/5 rounded-lg px-4 py-3 text-sm"
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard label="Lignes" value={report.rows} />
         <SummaryCard label="Colonnes" value={report.columns} />
