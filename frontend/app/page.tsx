@@ -122,7 +122,7 @@ export default function Home() {
 
           <div
             className="h-48 md:h-96 rounded-2xl bg-cover bg-center bg-[#0C447C] border border-white/10 order-first md:order-none"
-            style={{ backgroundImage: "url('/hero-image.jpg')" }}
+            style={{ backgroundImage: "url('/comores_1.jpg')" }}
           />
         </div>
       </section>
