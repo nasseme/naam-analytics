@@ -41,8 +41,19 @@ export default function DashboardPage() {
       {error && <p className="text-red-600">{error}</p>}
       {report && (
         <>
-          <h1 className="font-display font-bold text-2xl mb-1">Rapport</h1>
-          <p className="text-[#888780] mb-6">{filename}</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div>
+                <h1 className="font-display font-bold text-2xl mb-1">Rapport</h1>
+                <p className="text-[#888780]">{filename}</p>
+            </div>
+
+            <a
+                href={`${API_URL}/reports/${id}/pdf`}
+                className="inline-flex w-fit items-center justify-center bg-ink text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-ink/90 transition-colors"
+            >
+                Télécharger en PDF
+            </a>
+            </div>
           <ReportDashboard report={report} />
         </>
       )}
