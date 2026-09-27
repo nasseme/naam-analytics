@@ -79,21 +79,93 @@ class ConfirmRequest(BaseModel):
 
 
 def _read_file(file: UploadFile, content: bytes) -> pd.DataFrame:
-    filename = (file.filename or "").lower()
+    filename = (file.filename or "").lower().strip()
+
     try:
-        if filename.endswith(".csv"):
-            return pd.read_csv(io.BytesIO(content))
-        elif filename.endswith((".xlsx", ".xls")):
-            return pd.read_excel(io.BytesIO(content))
+        # CSV, TXT et TSV
+        if filename.endswith((".csv", ".txt", ".tsv")):
+            last_error = None
+
+            for encoding in ("utf-8-sig", "utf-8", "cp1252", "latin-1"):
+                try:
+                    # TSV : séparateur tabulation connu
+                    if filename.endswith(".tsv"):
+                        return pd.read_csv(
+                            io.BytesIO(content),
+                            sep="\t",
+                            encoding=encoding,
+                        )
+
+                    # CSV / TXT : détecte automatiquement , ; | ou tabulation
+                    return pd.read_csv(
+                        io.BytesIO(content),
+                        sep=None,
+                        engine="python",
+                        encoding=encoding,
+                    )
+
+                except UnicodeDecodeError as exc:
+                    last_error = exc
+                    continue
+
+            raise HTTPException(
+                status_code=400,
+                detail="Encodage du fichier non reconnu. Utilise UTF-8, Windows-1252 ou Latin-1.",
+            ) from last_error
+
+        # Excel moderne : .xlsx, .xlsm, modèles Excel
+        elif filename.endswith((".xlsx", ".xlsm", ".xltx", ".xltm")):
+            return pd.read_excel(
+                io.BytesIO(content),
+                engine="openpyxl",
+            )
+
+        # Ancien Excel : .xls
+        elif filename.endswith(".xls"):
+            return pd.read_excel(
+                io.BytesIO(content),
+                engine="xlrd",
+            )
+
+        # Excel binaire : .xlsb
+        elif filename.endswith(".xlsb"):
+            return pd.read_excel(
+                io.BytesIO(content),
+                engine="pyxlsb",
+            )
+
+        # OpenDocument : LibreOffice / OpenOffice
+        elif filename.endswith((".ods", ".odf", ".odt")):
+            return pd.read_excel(
+                io.BytesIO(content),
+                engine="odf",
+            )
+
+        # Format non reconnu
         else:
             raise HTTPException(
                 status_code=400,
-                detail="Format non supporté. Utilise un fichier .csv ou .xlsx.",
+                detail=(
+                    "Format non supporté. "
+                    "Formats acceptés : .csv, .txt, .tsv, .xls, .xlsx, "
+                    ".xlsm, .xlsb, .xltx, .xltm, .ods, .odf et .odt."
+                ),
             )
+
+    except HTTPException:
+        raise
+
     except pd.errors.EmptyDataError:
-        raise HTTPException(status_code=400, detail="Le fichier est vide.")
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=400, detail=f"Impossible de lire le fichier : {exc}")
+        raise HTTPException(
+            status_code=400,
+            detail="Le fichier est vide.",
+        )
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Impossible de lire le fichier : {exc}",
+        )
 
 
 def _build_report(df: pd.DataFrame, columns_meta: list[dict[str, Any]]) -> dict[str, Any]:
