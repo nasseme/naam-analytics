@@ -145,6 +145,47 @@ def generate_pdf(filename: str, report: dict[str, Any]) -> bytes:
             )
         )
 
+    insights = report.get("insights")
+    if insights:
+        if insights.get("time_series"):
+            elements.append(Paragraph("Analyse temporelle", h2_style))
+            for ts in insights["time_series"]:
+                elements.append(
+                    Paragraph(
+                        f"<b>{ts['column']}</b> — tendance : {ts['trend']} "
+                        f"({ts['change_pct']:+.1f}%)",
+                        styles["Normal"],
+                    )
+                )
+                for s in ts.get("seasonality", []):
+                    elements.append(
+                        Paragraph(
+                            f"Saisonnalité {s['cycle']} — pic : {s['peak']}, "
+                            f"creux : {s['low']}",
+                            styles["Normal"],
+                        )
+                    )
+                elements.append(Spacer(1, 6))
+
+        if insights.get("explanatory_relations"):
+            elements.append(Paragraph("Facteurs explicatifs", h2_style))
+            rel_rows = [["Colonne catégorielle", "Explique", "Force (η²)"]]
+            for r in insights["explanatory_relations"]:
+                rel_rows.append([r["categorical"], r["numeric"], str(r["eta_squared"])])
+            elements.append(_table(rel_rows))
+
+        if insights.get("correlations"):
+            elements.append(Paragraph("Corrélations fortes", h2_style))
+            corr_rows = [["Colonne A", "Colonne B", "Coefficient (r)"]]
+            for p in insights["correlations"]:
+                corr_rows.append([p["a"], p["b"], str(p["r"])])
+            elements.append(_table(corr_rows))
+
+        if insights.get("ml_suggestions"):
+            elements.append(Paragraph("Pistes Machine Learning (V2)", h2_style))
+            for s in insights["ml_suggestions"]:
+                elements.append(Paragraph(f"• {s}", styles["Normal"]))
+
     document.build(elements)
 
     buffer.seek(0)
