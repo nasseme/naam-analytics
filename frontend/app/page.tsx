@@ -112,7 +112,7 @@ export default function Home() {
                 Déposer un fichier ou cliquer pour choisir
               </span>
               <span className="block text-sm text-[#888780]">
-                Formats acceptés : .csv, .xlsx — 10 Mo maximum
+                Formats acceptés : .csv, .xlsx — 50 Mo maximum
               </span>
             </label>
 

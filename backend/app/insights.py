@@ -71,19 +71,35 @@ def categorical_insights(series: pd.Series) -> dict:
 
 # ---------- Temporelle : tendance + saisonnalité ----------
 
-def _seasonality(df: pd.DataFrame, group_col: str, cycle_name: str) -> dict | None:
-    group_means = df.groupby(group_col)["value"].mean()
+WEEKDAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+MONTH_LABELS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]
+
+
+def _seasonality(df: pd.DataFrame, group_key: pd.Series, labels: list[str], cycle_name: str) -> dict | None:
+    df = df.copy()
+    df["_group"] = group_key
+    group_means = df.groupby("_group")["value"].mean()
     overall_std = df["value"].std()
     if not overall_std or pd.isna(overall_std) or group_means.shape[0] < 2:
         return None
     variation = float(group_means.std() / overall_std)
     if variation < SEASONALITY_THRESHOLD:
         return None
+
+    averages = [
+        {"label": labels[i], "value": round(float(group_means.get(i, 0)), 2)}
+        for i in range(len(labels))
+        if i in group_means.index
+    ]
+    best = max(averages, key=lambda a: a["value"])
+    worst = min(averages, key=lambda a: a["value"])
+
     return {
         "cycle": cycle_name,
-        "peak": str(group_means.idxmax()),
-        "low": str(group_means.idxmin()),
+        "peak": best["label"],
+        "low": worst["label"],
         "strength": round(variation, 2),
+        "averages": averages,
     }
 
 
@@ -95,7 +111,6 @@ def time_series_insights(dates: pd.Series, values: pd.Series, column_name: str) 
 
     span_days = (df["date"].max() - df["date"].min()).days
 
-    # Tendance : début vs fin de période
     third = max(len(df) // 3, 1)
     start_mean = df["value"].iloc[:third].mean()
     end_mean = df["value"].iloc[-third:].mean()
@@ -109,21 +124,31 @@ def time_series_insights(dates: pd.Series, values: pd.Series, column_name: str) 
 
     seasonality = []
     if span_days >= 14:
-        df["dow"] = df["date"].dt.day_name()
-        weekly = _seasonality(df, "dow", "hebdomadaire")
+        weekly = _seasonality(df, df["date"].dt.dayofweek, WEEKDAY_LABELS, "hebdomadaire")
         if weekly:
             seasonality.append(weekly)
     if span_days >= 180 and df["date"].dt.month.nunique() >= 4:
-        df["month"] = df["date"].dt.month_name()
-        monthly = _seasonality(df, "month", "mensuelle")
+        monthly = _seasonality(df, df["date"].dt.month - 1, MONTH_LABELS, "mensuelle")
         if monthly:
             seasonality.append(monthly)
+
+    # Série pour le graphique de tendance : on lisse selon l'étendue pour
+    # garder un nombre de points raisonnable (pas de courbe illisible).
+    rule = "D" if span_days <= 90 else "W" if span_days <= 730 else "M"
+    resampled = (
+        df.set_index("date")["value"].resample(rule).mean().dropna()
+    )
+    series = [
+        {"date": str(idx.date()), "value": round(float(v), 2)}
+        for idx, v in resampled.items()
+    ]
 
     return {
         "column": column_name,
         "trend": trend,
         "change_pct": change_pct,
         "seasonality": seasonality,
+        "series": series,
     }
 
 
