@@ -36,7 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MAX_FILE_SIZE_MB = 10
+MAX_FILE_SIZE_MB = 50
 
 # --- Supabase ---------------------------------------------------------------
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
