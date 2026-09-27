@@ -121,8 +121,8 @@ export default function Home() {
           </div>
 
           <div
-            className="hidden md:block h-96 rounded-2xl bg-cover bg-center bg-[#0C447C] border border-white/10"
-            style={{ backgroundImage: "url('/comores_1.jpg')" }}
+            className="h-48 md:h-96 rounded-2xl bg-cover bg-center bg-[#0C447C] border border-white/10 order-first md:order-none"
+            style={{ backgroundImage: "url('/hero-image.jpg')" }}
           />
         </div>
       </section>

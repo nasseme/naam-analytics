@@ -76,7 +76,7 @@ export default function ReportDashboard({ report }: { report: Report }) {
       <div>
         <h3 className="font-display font-bold text-lg mb-3">Colonnes détectées</h3>
         <div className="overflow-x-auto border border-[#D3D1C7] rounded-lg">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-[#F1EFE8] text-left">
               <tr>
                 <th className="px-4 py-2">Colonne</th>
@@ -129,7 +129,7 @@ export default function ReportDashboard({ report }: { report: Report }) {
           Aperçu (10 premières lignes)
         </h3>
         <div className="overflow-x-auto border border-[#D3D1C7] rounded-lg">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-[#F1EFE8] text-left">
               <tr>
                 {previewColumns.map((col) => (
@@ -160,7 +160,7 @@ export default function ReportDashboard({ report }: { report: Report }) {
             Statistiques descriptives
           </h3>
           <div className="overflow-x-auto border border-[#D3D1C7] rounded-lg">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[600px]">
               <thead className="bg-[#F1EFE8] text-left">
                 <tr>
                   <th className="px-4 py-2"></th>
