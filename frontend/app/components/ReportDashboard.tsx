@@ -27,9 +27,12 @@ type Report = {
   preview: Record<string, string>[];
   columns_analysis: ColumnAnalysis[];
   descriptive_stats: Record<string, Record<string, string>>;
-  insights?: {
+    insights?: {
     key_insights: string[];
     ml_suggestions: string[];
+    time_series: any[];
+    explanatory_relations: any[];
+    correlations: any[];
   };
 };
 
@@ -67,27 +70,106 @@ export default function ReportDashboard({ report }: { report: Report }) {
 
   return (
     <div className="space-y-10">
-        {report.insights && report.insights.key_insights.length > 0 && (
-        <div>
-          <h3 className="font-display font-bold text-lg mb-3">Points clés</h3>
-          <ul className="space-y-2 mb-6">
-            {report.insights.key_insights.map((insight, i) => (
-              <li
-                key={i}
-                className="border border-[#D3D1C7] rounded-lg px-4 py-3 text-sm"
-              >
-                {insight}
-              </li>
-            ))}
-          </ul>
+              {report.insights && (
+        <div className="space-y-8">
+          {report.insights.time_series.length > 0 && (
+            <div>
+              <h3 className="font-display font-bold text-lg mb-3">
+                Analyse temporelle
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {report.insights.time_series.map((ts: any) => (
+                  <div key={ts.column} className="border border-[#D3D1C7] rounded-lg p-4">
+                    <p className="font-medium mb-1">{ts.column}</p>
+                    <p className="text-sm mb-2">
+                      Tendance :{" "}
+                      <span
+                        className={
+                          ts.trend === "hausse"
+                            ? "text-green-700"
+                            : ts.trend === "baisse"
+                            ? "text-red-700"
+                            : "text-[#888780]"
+                        }
+                      >
+                        {ts.trend} ({ts.change_pct > 0 ? "+" : ""}
+                        {ts.change_pct}%)
+                      </span>
+                    </p>
+                    {ts.seasonality.map((s: any) => (
+                      <p key={s.cycle} className="text-xs text-[#888780]">
+                        Saisonnalité {s.cycle} — pic : {s.peak}, creux : {s.low}
+                      </p>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {report.insights.explanatory_relations.length > 0 && (
+            <div>
+              <h3 className="font-display font-bold text-lg mb-3">
+                Facteurs explicatifs
+              </h3>
+              <div className="overflow-x-auto border border-[#D3D1C7] rounded-lg">
+                <table className="w-full text-sm min-w-[500px]">
+                  <thead className="bg-[#F1EFE8] text-left">
+                    <tr>
+                      <th className="px-4 py-2">Colonne catégorielle</th>
+                      <th className="px-4 py-2">Explique</th>
+                      <th className="px-4 py-2">Force (η²)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.insights.explanatory_relations.map((r: any, i: number) => (
+                      <tr key={i} className="border-t border-[#D3D1C7]">
+                        <td className="px-4 py-2 font-medium">{r.categorical}</td>
+                        <td className="px-4 py-2">{r.numeric}</td>
+                        <td className="px-4 py-2">{r.eta_squared}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {report.insights.correlations.length > 0 && (
+            <div>
+              <h3 className="font-display font-bold text-lg mb-3">
+                Corrélations fortes
+              </h3>
+              <div className="overflow-x-auto border border-[#D3D1C7] rounded-lg">
+                <table className="w-full text-sm min-w-[500px]">
+                  <thead className="bg-[#F1EFE8] text-left">
+                    <tr>
+                      <th className="px-4 py-2">Colonne A</th>
+                      <th className="px-4 py-2">Colonne B</th>
+                      <th className="px-4 py-2">Coefficient (r)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.insights.correlations.map((p: any, i: number) => (
+                      <tr key={i} className="border-t border-[#D3D1C7]">
+                        <td className="px-4 py-2 font-medium">{p.a}</td>
+                        <td className="px-4 py-2">{p.b}</td>
+                        <td className="px-4 py-2">{p.r}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {report.insights.ml_suggestions.length > 0 && (
-            <>
+            <div>
               <h3 className="font-display font-bold text-lg mb-3">
                 Pistes Machine Learning (V2)
               </h3>
               <ul className="space-y-2">
-                {report.insights.ml_suggestions.map((s, i) => (
+                {report.insights.ml_suggestions.map((s: string, i: number) => (
                   <li
                     key={i}
                     className="border border-amber/40 bg-amber/5 rounded-lg px-4 py-3 text-sm"
@@ -96,7 +178,7 @@ export default function ReportDashboard({ report }: { report: Report }) {
                   </li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
         </div>
       )}
