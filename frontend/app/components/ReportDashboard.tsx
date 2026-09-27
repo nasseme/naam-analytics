@@ -96,10 +96,23 @@ export default function ReportDashboard({ report }: { report: Report }) {
                         {ts.change_pct}%)
                       </span>
                     </p>
-                    {ts.seasonality.map((s: any) => (
-                      <p key={s.cycle} className="text-xs text-[#888780]">
-                        Saisonnalité {s.cycle} — pic : {s.peak}, creux : {s.low}
-                      </p>
+                      {ts.seasonality.map((s: any) => (
+                      <div key={s.cycle} className="mt-3">
+                        <p className="text-xs text-[#888780] mb-1">
+                          Saisonnalité {s.cycle} — pic : {s.peak}, creux : {s.low}
+                        </p>
+                        <div className="h-40">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={s.averages}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#E4E2D9" />
+                              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                              <YAxis tick={{ fontSize: 10 }} />
+                              <Tooltip />
+                              <Bar dataKey="value" fill="#042C53" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 ))}
