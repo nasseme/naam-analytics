@@ -20,6 +20,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import Client, create_client
 
+from fastapi.responses import Response
+from .pdf_export import generate_pdf
+
 from .type_detection import CONFIDENCE_THRESHOLD, analyze_dataframe
 
 app = FastAPI(title="Data Analyst Platform API", version="0.2.0")
@@ -262,6 +265,38 @@ async def get_report(report_id: str):
     row = result.data[0]
     return {"id": row["id"], "filename": row["filename"], "report": row["report_json"]}
 
+@app.get("/reports/{report_id}/pdf")
+async def export_report_pdf(report_id: str):
+    if supabase is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase n'est pas configuré.",
+        )
+
+    result = supabase.table("reports").select("*").eq("id", report_id).execute()
+
+    if not result.data:
+        raise HTTPException(
+            status_code=404,
+            detail="Rapport introuvable ou supprimé.",
+        )
+
+    row = result.data[0]
+
+    pdf_bytes = generate_pdf(
+        filename=row["filename"],
+        report=row["report_json"],
+    )
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="naam-analytics-report-{report_id[:8]}.pdf"'
+            )
+        },
+    )
 
 @app.get("/health")
 async def health():
