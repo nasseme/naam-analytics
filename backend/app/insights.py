@@ -8,8 +8,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from reportlab.graphics.shapes import Drawing
-from reportlab.graphics.charts.lineplots import LinePlot
+
 
 MAX_KEY_INSIGHTS = 8
 CORRELATION_THRESHOLD = 0.5
@@ -320,4 +319,5 @@ def build_insights(df: pd.DataFrame, columns_meta: list[dict]) -> dict:
         "correlations": correlations,
         "key_insights": key_insights[:MAX_KEY_INSIGHTS],
         "ml_suggestions": list(dict.fromkeys(ml_suggestions)),  # dédoublonne en gardant l'ordre
+        "curves": build_curves(df, columns_meta),
     }
