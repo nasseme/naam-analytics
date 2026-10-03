@@ -163,7 +163,7 @@ def generate_pdf(filename: str, report: dict[str, Any]) -> bytes:
     insights = report.get("insights")
     if insights:
         if insights.get("time_series"):
-            elements.append(Paragraph("Analyse temporelle", h2_style))
+            elements.append(Paragraph("Analyse temporelle", section_style))
             for ts in insights["time_series"]:
                 elements.append(
                     Paragraph(
@@ -183,31 +183,31 @@ def generate_pdf(filename: str, report: dict[str, Any]) -> bytes:
                 elements.append(Spacer(1, 6))
 
         if insights.get("explanatory_relations"):
-            elements.append(Paragraph("Facteurs explicatifs", h2_style))
+            elements.append(Paragraph("Facteurs explicatifs", section_style))
             rel_rows = [["Colonne catégorielle", "Explique", "Force (η²)"]]
             for r in insights["explanatory_relations"]:
                 rel_rows.append([r["categorical"], r["numeric"], str(r["eta_squared"])])
-            elements.append(_table(rel_rows))
+            elements.append(create_table(rel_rows, [9 * cm, 9 * cm, 6 * cm]))
 
         if insights.get("correlations"):
-            elements.append(Paragraph("Corrélations fortes", h2_style))
+            elements.append(Paragraph("Corrélations fortes", section_style))
             corr_rows = [["Colonne A", "Colonne B", "Coefficient (r)"]]
             for p in insights["correlations"]:
                 corr_rows.append([p["a"], p["b"], str(p["r"])])
-            elements.append(_table(corr_rows))
+            elements.append(create_table(corr_rows, [9 * cm, 9 * cm, 6 * cm]))
 
         if insights.get("ml_suggestions"):
-            elements.append(Paragraph("Pistes Machine Learning (V2)", h2_style))
+            elements.append(Paragraph("Pistes Machine Learning (V2)", section_style))
             for s in insights["ml_suggestions"]:
                 elements.append(Paragraph(f"• {s}", styles["Normal"]))
 
         curves = insights.get("curves")
         if curves:
-            elements.append(Paragraph("Courbes des variables numériques", h2_style))
+            elements.append(Paragraph("Courbes des variables numériques", section_style))
             for col, points in curves.items():
                 elements.append(Paragraph(col, styles["Normal"]))
                 elements.append(_line_chart(points))
-                elements.append(Spacer(1, 10))        
+                elements.append(Spacer(1, 10))
 
     document.build(elements)
 
