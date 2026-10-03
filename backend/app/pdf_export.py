@@ -10,6 +10,8 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.lineplots import LinePlot
 
 INK = colors.HexColor("#042C53")
 LIGHT = colors.HexColor("#F1F5F9")
@@ -45,7 +47,20 @@ def create_table(data: list[list[Any]], widths: list[float] | None = None) -> Ta
     )
 
     return table
-
+def _line_chart(points: list[dict]) -> Drawing:
+    width, height = 450, 150
+    drawing = Drawing(width, height)
+    plot = LinePlot()
+    plot.x, plot.y = 30, 20
+    plot.width, plot.height = width - 60, height - 40
+    plot.data = [[(i, p["y"]) for i, p in enumerate(points)]]
+    plot.lines[0].strokeColor = INK
+    plot.lines[0].strokeWidth = 1.5
+    plot.joinedLines = 1
+    plot.xValueAxis.visibleGrid = True
+    plot.yValueAxis.visibleGrid = True
+    drawing.add(plot)
+    return drawing
 
 def generate_pdf(filename: str, report: dict[str, Any]) -> bytes:
     buffer = io.BytesIO()
@@ -185,6 +200,14 @@ def generate_pdf(filename: str, report: dict[str, Any]) -> bytes:
             elements.append(Paragraph("Pistes Machine Learning (V2)", h2_style))
             for s in insights["ml_suggestions"]:
                 elements.append(Paragraph(f"• {s}", styles["Normal"]))
+
+        curves = insights.get("curves")
+        if curves:
+            elements.append(Paragraph("Courbes des variables numériques", h2_style))
+            for col, points in curves.items():
+                elements.append(Paragraph(col, styles["Normal"]))
+                elements.append(_line_chart(points))
+                elements.append(Spacer(1, 10))        
 
     document.build(elements)
 

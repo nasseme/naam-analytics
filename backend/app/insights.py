@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import pandas as pd
 
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.lineplots import LinePlot
+
 MAX_KEY_INSIGHTS = 8
 CORRELATION_THRESHOLD = 0.5
 ETA_SQUARED_THRESHOLD = 0.14  # seuil conventionnel d'un "effet fort"
@@ -186,6 +189,37 @@ def compute_correlations(df: pd.DataFrame, numeric_columns: list[str]) -> list[d
 
 
 # ---------- Assemblage ----------
+
+def build_curves(df: pd.DataFrame, columns_meta: list[dict], max_points: int = 150) -> dict:
+    """Pour chaque colonne numérique : une courbe simple (valeur dans le temps),
+    avec la date en abscisse si une colonne date existe, sinon l'ordre des lignes."""
+    numeric_cols = [c["name"] for c in columns_meta if c["detected_type"] == "numeric"]
+    date_cols = [c["name"] for c in columns_meta if c["detected_type"] == "date"]
+
+    if date_cols:
+        x_values = pd.to_datetime(df[date_cols[0]], errors="coerce", dayfirst=True)
+        order = x_values.sort_values().index
+    else:
+        order = df.index
+        x_values = pd.Series(range(len(df)), index=df.index)
+
+    curves = {}
+    for col in numeric_cols:
+        y = pd.to_numeric(df.loc[order, col], errors="coerce")
+        x = x_values.loc[order]
+        valid = y.notna()
+        x, y = x[valid], y[valid]
+        if len(y) < 2:
+            continue
+        if len(y) > max_points:
+            step = max(len(y) // max_points, 1)
+            x, y = x[::step], y[::step]
+        if date_cols:
+            points = [{"x": str(xi.date()), "y": round(float(yi), 2)} for xi, yi in zip(x, y)]
+        else:
+            points = [{"x": int(xi), "y": round(float(yi), 2)} for xi, yi in zip(x, y)]
+        curves[col] = points
+    return curves
 
 def build_insights(df: pd.DataFrame, columns_meta: list[dict]) -> dict:
     numeric_cols = [c["name"] for c in columns_meta if c["detected_type"] == "numeric"]

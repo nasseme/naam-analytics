@@ -3,6 +3,8 @@
 import {
   BarChart,
   Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -33,6 +35,7 @@ type Report = {
     time_series: any[];
     explanatory_relations: any[];
     correlations: any[];
+    curves?: Record<string, { x: string | number; y: number }[]>;
   };
 };
 
@@ -175,7 +178,37 @@ export default function ReportDashboard({ report }: { report: Report }) {
               </div>
             </div>
           )}
-
+          {report.insights.curves && (
+            <div>
+              <h3 className="font-display font-bold text-lg mb-3">
+                Courbes des variables numériques
+              </h3>
+              <div className="space-y-6">
+                {Object.entries(report.insights.curves).map(([col, points]) => (
+                  <div key={col} className="border border-[#D3D1C7] rounded-lg p-4">
+                    <p className="font-medium mb-2">{col}</p>
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={points}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E4E2D9" />
+                          <XAxis dataKey="x" tick={{ fontSize: 10 }} />
+                          <YAxis tick={{ fontSize: 10 }} />
+                          <Tooltip />
+                          <Line
+                            type="monotone"
+                            dataKey="y"
+                            stroke="#EF9F27"
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {report.insights.ml_suggestions.length > 0 && (
             <div>
               <h3 className="font-display font-bold text-lg mb-3">
