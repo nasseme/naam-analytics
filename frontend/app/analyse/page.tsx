@@ -1,5 +1,7 @@
 "use client";
-import ReportDashboard from "../components/ReportDashboard";
+import ReportDashboard from "../../components/ReportDashboard";
+import PageHero from "../../components/PageHero";
+import { IMAGES } from "../../components/pageImages";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -17,7 +19,7 @@ type AnalyzeResponse =
   | { status: "needs_clarification"; upload_id: string; clarifications: Clarification[] }
   | { status: "complete"; id: string; report: any };
 
-export default function Home() {
+export default function AnalysePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,49 +85,38 @@ export default function Home() {
     }
   }
 
-    return (
+  return (
     <main>
       {/* ---------- HERO ---------- */}
-      <section className="bg-ink text-[#F1EFE8]">
-        <div className="max-w-6xl mx-auto px-8 py-20 grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-sm tracking-wide text-[#B4B2A9] mb-4">NAAM Analytics</p>
-            <h1 className="font-display font-bold text-4xl md:text-5xl leading-tight mb-5">
-              Vos fichiers de données,
-              <br />
-              enfin lisibles
-            </h1>
-            <p className="text-[#D3D1C7] text-lg mb-8 max-w-md">
-              Importe un CSV ou un Excel. On détecte les types de colonnes, les
-              valeurs manquantes et les doublons, et on te rend un rapport clair
-              en quelques secondes.
-            </p>
-
-            <label className="block border border-dashed border-[#5F5E5A] rounded-lg p-6 cursor-pointer hover:border-amber transition-colors">
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls"
-                onChange={handleUpload}
-                className="hidden"
-              />
-              <span className="block font-medium mb-1">
-                Déposer un fichier ou cliquer pour choisir
-              </span>
-              <span className="block text-sm text-[#888780]">
-                Formats acceptés : .csv, .xlsx — 50 Mo maximum
-              </span>
-            </label>
-
-            {loading && <p className="mt-4 text-amber">Analyse en cours…</p>}
-            {error && <p className="mt-4 text-[#F09595]">{error}</p>}
-          </div>
-
-          <div
-            className="h-48 md:h-96 rounded-2xl bg-cover bg-center bg-[#0C447C] border border-white/10 order-first md:order-none"
-            style={{ backgroundImage: "url('/comores_1.jpg')" }}
+      <PageHero
+        title={
+          <>
+            Vos fichiers de données,
+            <br />
+            enfin lisibles
+          </>
+        }
+        description="Importe un CSV ou un Excel. On détecte les types de colonnes, les valeurs manquantes et les doublons, et on te rend un rapport clair en quelques secondes."
+        image={IMAGES.analyse}
+      >
+        <label className="block border border-dashed border-[#5F5E5A] rounded-lg p-6 cursor-pointer hover:border-amber transition-colors">
+          <input
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            onChange={handleUpload}
+            className="hidden"
           />
-        </div>
-      </section>
+          <span className="block font-medium mb-1">
+            Déposer un fichier ou cliquer pour choisir
+          </span>
+          <span className="block text-sm text-[#888780]">
+            Formats acceptés : .csv, .xlsx — 50 Mo maximum
+          </span>
+        </label>
+
+        {loading && <p className="mt-4 text-amber">Analyse en cours…</p>}
+        {error && <p className="mt-4 text-[#F09595]">{error}</p>}
+      </PageHero>
 
       {result?.status === "needs_clarification" && (
         <section className="max-w-3xl mx-auto px-8 py-14">
@@ -166,7 +157,7 @@ export default function Home() {
         </section>
       )}
 
-            {result?.status === "complete" && (
+      {result?.status === "complete" && (
         <section className="max-w-5xl mx-auto px-8 py-14">
           <h2 className="font-display font-bold text-2xl mb-6">Rapport</h2>
           <ReportDashboard report={result.report} />

@@ -1,11 +1,25 @@
-export default function Page() {
+import { IMAGES } from "../../components/pageImages";
+import PageHero from "../../components/PageHero";
+
+
+export default function FineTuningPage() {
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <h1 className="mb-2 text-xl font-semibold">Fine-tuning</h1>
-      <p className="text-gray-500">Prépare l&apos;entraînement d&apos;un modèle sur tes données.</p>
-      <p className="mt-4 rounded border border-dashed p-4 text-sm text-gray-500">
-        Bientôt disponible.
-      </p>
+    <main>
+      <PageHero
+        title={
+          <>
+            Entraîne
+            <br />
+            ton propre modèle
+          </>
+        }
+        description="Prépare un jeu de données et lance le fine-tuning d'un modèle adapté à ton besoin."
+        image={IMAGES.finetuning}
+      >
+        <span className="inline-block rounded-full border border-[#5F5E5A] px-4 py-1.5 text-sm text-[#D3D1C7]">
+          Bientôt disponible
+        </span>
+      </PageHero>
     </main>
   );
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { IMAGES } from "../../components/pageImages";
+import PageHero from "../../components/PageHero";
+
 
 type Msg = { role: "user" | "assistant"; content: string };
 type ProviderInfo = { default_model: string; models: string[]; server_key: boolean };
@@ -130,50 +133,60 @@ export default function ChatPage() {
 
   if (!picked) {
     return (
-      <main className="mx-auto max-w-3xl p-6">
-        <h1 className="mb-1 text-xl font-semibold">Chat IA</h1>
-        <p className="mb-4 text-sm text-gray-500">
-          Choisis une IA, puis connecte-toi ou crée un compte chez le fournisseur.
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {Object.keys(providers).map((p) => {
-            const meta = AI_INFO[p] ?? { name: p, desc: "", signup: "" };
-            return (
-              <div key={p} className="rounded border p-4">
-                <div className="font-medium">{meta.name}</div>
-                <p className="mb-3 text-sm text-gray-500">{meta.desc}</p>
-                <div className="flex items-center gap-3">
-                  <button
-                    className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white"
-                    onClick={() => {
-                      setProvider(p);
-                      setPicked(true);
-                    }}
-                  >
-                    Utiliser
-                  </button>
-                  {meta.signup && (
-                    <a
-                      className="text-sm underline"
-                      href={meta.signup}
-                      target="_blank"
-                      rel="noreferrer"
+      <main>
+        <PageHero
+          title={
+            <>
+              Discute avec
+              <br />
+              l&apos;IA de ton choix
+            </>
+          }
+          description="Choisis un fournisseur, connecte-toi ou crée un compte, puis pose tes questions."
+          image={IMAGES.chat}
+        />
+        <section className="max-w-6xl mx-auto px-8 py-14">
+          <h2 className="font-display font-bold text-2xl mb-6">Choisis une IA</h2>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Object.keys(providers).map((p) => {
+              const meta = AI_INFO[p] ?? { name: p, desc: "", signup: "" };
+              return (
+                <div key={p} className="rounded-lg border border-[#D3D1C7] p-5">
+                  <div className="font-display font-bold text-lg">{meta.name}</div>
+                  <p className="mb-4 text-sm text-[#5F5E5A]">{meta.desc}</p>
+                  <div className="flex items-center gap-4">
+                    <button
+                      className="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-ink/90"
+                      onClick={() => {
+                        setProvider(p);
+                        setPicked(true);
+                      }}
                     >
-                      Créer un compte
-                    </a>
-                  )}
+                      Utiliser
+                    </button>
+                    {meta.signup && (
+                      <a
+                        className="text-sm underline"
+                        href={meta.signup}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Créer un compte
+                      </a>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+              );
+            })}
+          </div>
+          {error && <p className="mt-4 text-[#A32D2D]">{error}</p>}
+        </section>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex h-[calc(100vh-56px)] max-w-3xl flex-col gap-3 p-4">
+    <main className="mx-auto flex h-[calc(100dvh-56px)] max-w-3xl flex-col gap-3 p-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Chat IA</h1>
         <button className="rounded border px-3 py-1 text-sm" onClick={() => setPicked(false)}>
@@ -241,7 +254,7 @@ export default function ChatPage() {
             </>
           ) : (
             <button
-              className="rounded bg-blue-600 px-4 py-2 text-white"
+              className="rounded bg-ink px-4 py-2 text-white"
               onClick={startOpenRouterLogin}
             >
               Se connecter avec OpenRouter
@@ -278,7 +291,7 @@ export default function ChatPage() {
           <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
             <span
               className={`inline-block max-w-[85%] whitespace-pre-wrap rounded px-3 py-2 text-left ${
-                m.role === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-900"
+                m.role === "user" ? "bg-ink text-white" : "bg-gray-100 text-gray-900"
               }`}
             >
               {m.content}
@@ -305,7 +318,7 @@ export default function ChatPage() {
           }}
         />
         <button
-          className="rounded bg-blue-600 px-4 text-white disabled:opacity-50"
+          className="rounded bg-ink px-4 text-white disabled:opacity-50"
           onClick={send}
           disabled={loading}
         >
