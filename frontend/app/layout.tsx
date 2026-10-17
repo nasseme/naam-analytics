@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Space_Grotesk } from "next/font/google";
+import TabsNav from "./TabsNav";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -15,7 +16,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={spaceGrotesk.variable}>
-      <body className="bg-white text-ink">{children}</body>
+      <body className="bg-white text-ink">
+        <TabsNav />
+        {children}
+      </body>
     </html>
   );
 }
