@@ -28,9 +28,10 @@ from .type_detection import CONFIDENCE_THRESHOLD, analyze_dataframe
 from .insights import build_insights
 
 from chat_router import router as chat_router
-app.include_router(chat_router)
+
 
 app = FastAPI(title="Data Analyst Platform API", version="0.2.0")
+app.include_router(chat_router)
 
 app.add_middleware(
     CORSMiddleware,
