@@ -1,5 +1,5 @@
 "use client";
-import ReportDashboard from "../../components/ReportDashboard";
+import ReportDashboard from "../components/ReportDashboard";
 import PageHero from "../../components/PageHero";
 import { IMAGES } from "../../components/pageImages";
 import { useState } from "react";
